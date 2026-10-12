@@ -90,7 +90,6 @@ footer .keys span{margin-right:14px}
 </section>
 
 <section id="screen-confirm" data-screen="confirm" hidden>
-<div class="msg ok" id="msgSaved">Bank details saved.</div>
 <fieldset><legend>Change confirmation</legend>
 <div class="row"><label>Confirmation ref</label><span id="lblConfirmRef" class="ro"></span></div>
 <div class="row"><label>Supplier ID</label><span id="lblConfirmSupplierId" class="ro"></span></div>
@@ -306,6 +305,9 @@ function save(){
     $("lblConfirmChangeRef").textContent = ref;
     $("lblConfirmAuthorisedBy").textContent = by;
     $("lblConfirmTimestamp").textContent = new Date().toISOString().replace("T"," ").slice(0,19) + " UTC";
+    const old = $("msgSaved"); if (old) old.remove();
+    const ok = document.createElement("div"); ok.id = "msgSaved"; ok.className = "msg ok"; ok.textContent = "Bank details saved.";
+    $("screen-confirm").prepend(ok);
     show("confirm"); status("Record saved " + confirmRef);
   }, 1200);
 }
@@ -314,7 +316,7 @@ $("txtSupplierSearch").addEventListener("keydown", e => { if (e.key === "Enter")
 $("tblResultsBody").addEventListener("click", e => { const b = e.target.closest(".btn-amend"); if (b) openAmend(b.dataset.supplierId); });
 $("btnSave").addEventListener("click", save);
 $("btnCancel").addEventListener("click", () => { show("search"); status("Change cancelled"); });
-$("btnNewSearch").addEventListener("click", () => { show("search"); $("txtSupplierSearch").value = ""; $("tblResults").hidden = true; status("Ready"); });
+$("btnNewSearch").addEventListener("click", () => { const m = $("msgSaved"); if (m) m.remove(); show("search"); $("txtSupplierSearch").value = ""; $("tblResults").hidden = true; status("Ready"); });
 </script>
 </body>
 </html>
