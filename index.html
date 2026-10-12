@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinCore Supplier Ledger 4.2 (Training)</title>
+<style>
+:root{--bar:#1B2F5B;--bar2:#2C4A86;--panel:#D9DDE3;--win:#EEF0F3;--line:#8C96A6;--ink:#1A1A1A;--warn:#F2C14E;--err:#A4161A;--ok:#1E6B34}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--win);color:var(--ink);font:13px/1.45 Tahoma,Verdana,"Segoe UI",Geneva,sans-serif;display:flex;flex-direction:column}
+.titlebar{background:linear-gradient(var(--bar2),var(--bar));color:#fff;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0E1A35}
+.titlebar strong{font-size:14px;letter-spacing:.2px}
+.titlebar span{font-size:11px;opacity:.85}
+.training{background:var(--warn);color:#3A2A00;padding:4px 12px;font-size:11.5px;border-bottom:1px solid #B38B1D}
+.shell{flex:1;display:flex;min-height:0}
+nav{width:190px;background:var(--panel);border-right:1px solid var(--line);padding:10px 0}
+nav p{margin:0 12px 6px;font-weight:bold;font-size:11.5px;color:#3B4659}
+nav a{display:block;padding:4px 16px;color:#5D6675;text-decoration:none;font-size:12.5px;cursor:not-allowed}
+nav a.active{background:#fff;color:var(--ink);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:bold;cursor:default}
+main{flex:1;padding:14px 18px;overflow:auto}
+fieldset{background:#fff;border:1px solid var(--line);padding:12px 14px 14px;margin:0 0 14px;max-width:760px}
+legend{background:var(--bar);color:#fff;padding:2px 10px;font-weight:bold;font-size:12px}
+label{display:inline-block;width:170px;font-weight:bold;font-size:12.5px}
+.row{margin:7px 0;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+input[type=text]{font:inherit;padding:3px 5px;border:1px solid #7A8494;border-top-color:#5B6474;width:260px;background:#FFFFF4}
+input[type=text]:focus,button:focus{outline:2px solid #F2A900;outline-offset:1px}
+button{font:inherit;font-size:12.5px;padding:3px 14px;border:1px solid #5B6474;background:linear-gradient(#FDFDFD,#D5DAE1);cursor:pointer}
+button:active{background:#C9CFD8}
+.ro{font-family:"Courier New",Courier,monospace;font-size:13px}
+table{border-collapse:collapse;width:100%;max-width:760px;background:#fff}
+th{background:var(--panel);text-align:left;border:1px solid var(--line);padding:4px 6px;font-size:12px}
+td{border:1px solid #C3C9D2;padding:4px 6px;font-size:12.5px}
+tbody tr:nth-child(even){background:#F5F7FA}
+.msg{max-width:760px;padding:6px 10px;margin:0 0 12px;border:1px solid}
+.msg.err{background:#FBEAEA;border-color:var(--err);color:var(--err)}
+.msg.busy{background:#FFF7DA;border-color:#B38B1D}
+.msg.ok{background:#E7F3EA;border-color:var(--ok);color:var(--ok);font-weight:bold}
+.hint{font-size:11.5px;color:#5D6675;margin-left:4px}
+footer{background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11.5px;padding:3px 10px}
+footer .keys span{margin-right:14px}
+@media (max-width:700px){nav{display:none}label{width:100%}input[type=text]{width:100%}}
+</style>
+</head>
+<body>
+<div class="titlebar"><strong>FinCore Supplier Ledger 4.2</strong><span>Brookvale Infrastructure Ltd &nbsp;|&nbsp; Company 01 &nbsp;|&nbsp; Period 07/2026</span></div>
+<div class="training" role="note">Training system. All suppliers and bank details are fictional, created for a portfolio project.</div>
+<div class="shell">
+<nav aria-label="Modules">
+<p>Purchase Ledger</p>
+<a aria-disabled="true">Supplier enquiry</a>
+<a class="active" aria-current="page">Supplier bank details</a>
+<a aria-disabled="true">Invoice entry</a>
+<a aria-disabled="true">Payment runs</a>
+<a aria-disabled="true">Reports</a>
+</nav>
+<main>
+
+<section id="screen-search" data-screen="search">
+<fieldset><legend>Find supplier</legend>
+<div class="row"><label for="txtSupplierSearch">Supplier ID or name</label>
+<input type="text" id="txtSupplierSearch" name="supplierSearch" autocomplete="off">
+<button type="button" id="btnSearch">Search</button><span class="hint">Leave blank to list all</span></div>
+</fieldset>
+<div id="msgNoResults" class="msg err" hidden>No supplier matches that search. Check the supplier ID (for example SUP-1001) and try again.</div>
+<table id="tblResults" hidden>
+<thead><tr><th>Supplier ID</th><th>Company name</th><th>Sort code</th><th>Account</th><th>Status</th><th></th></tr></thead>
+<tbody id="tblResultsBody"></tbody>
+</table>
+</section>
+
+<section id="screen-amend" data-screen="amend" hidden>
+<fieldset><legend>Current bank details</legend>
+<div class="row"><label>Supplier ID</label><span id="lblSupplierId" class="ro"></span></div>
+<div class="row"><label>Company name</label><span id="lblCompanyName"></span></div>
+<div class="row"><label>Sort code</label><span id="lblCurrentSortCode" class="ro"></span></div>
+<div class="row"><label>Account number</label><span id="lblCurrentAccount" class="ro"></span></div>
+<div class="row"><label>Account name</label><span id="lblCurrentAccountName"></span></div>
+</fieldset>
+<div id="msgError" class="msg err" role="alert" hidden></div>
+<div id="msgProcessing" class="msg busy" hidden>Saving record. Please wait.</div>
+<fieldset><legend>New bank details</legend>
+<div class="row"><label for="txtSortCode">New sort code</label><input type="text" id="txtSortCode" name="sortCode" autocomplete="off"><span class="hint">00-00-00</span></div>
+<div class="row"><label for="txtAccountNumber">New account number</label><input type="text" id="txtAccountNumber" name="accountNumber" autocomplete="off"><span class="hint">8 digits</span></div>
+<div class="row"><label for="txtAccountName">New account name</label><input type="text" id="txtAccountName" name="accountName" autocomplete="off"></div>
+<div class="row"><label for="txtChangeRef">Change request ref</label><input type="text" id="txtChangeRef" name="changeRef" autocomplete="off"><span class="hint">BDC-0000</span></div>
+<div class="row"><label for="txtAuthorisedBy">Authorised by</label><input type="text" id="txtAuthorisedBy" name="authorisedBy" autocomplete="off"></div>
+<div class="row" style="margin-top:12px"><label></label><button type="button" id="btnSave">Save bank details</button>&nbsp;<button type="button" id="btnCancel">Cancel</button></div>
+</fieldset>
+</section>
+
+<section id="screen-confirm" data-screen="confirm" hidden>
+<div class="msg ok" id="msgSaved">Bank details saved.</div>
+<fieldset><legend>Change confirmation</legend>
+<div class="row"><label>Confirmation ref</label><span id="lblConfirmRef" class="ro"></span></div>
+<div class="row"><label>Supplier ID</label><span id="lblConfirmSupplierId" class="ro"></span></div>
+<div class="row"><label>Company name</label><span id="lblConfirmCompany"></span></div>
+<div class="row"><label>Sort code</label><span id="lblConfirmSortCode" class="ro"></span></div>
+<div class="row"><label>Account number</label><span id="lblConfirmAccountNumber" class="ro"></span></div>
+<div class="row"><label>Account name</label><span id="lblConfirmAccountName"></span></div>
+<div class="row"><label>Change request ref</label><span id="lblConfirmChangeRef" class="ro"></span></div>
+<div class="row"><label>Authorised by</label><span id="lblConfirmAuthorisedBy"></span></div>
+<div class="row"><label>Saved at</label><span id="lblConfirmTimestamp" class="ro"></span></div>
+<div class="row" style="margin-top:12px"><label></label><button type="button" id="btnNewSearch">Find another supplier</button></div>
+</fieldset>
+</section>
+
+</main>
+</div>
+<footer><div class="keys"><span>F3 Exit</span><span>F5 Search</span><span>F10 Save</span></div><div id="statusBar">Ready</div></footer>
+
+<script>
+const SUPPLIERS = [
+ {
+  "SupplierID": "SUP-1001",
+  "CompanyName": "Ridgeway Civils Ltd",
+  "SortCode": "23-45-41",
+  "AccountNumber": "39958838",
+  "AccountName": "Ridgeway Civils Ltd",
+  "PhoneOnFile": "0121 496 0101",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1002",
+  "CompanyName": "Northfield Groundworks Ltd",
+  "SortCode": "31-85-64",
+  "AccountNumber": "14265799",
+  "AccountName": "Northfield Groundworks Ltd",
+  "PhoneOnFile": "0113 496 0202",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1003",
+  "CompanyName": "Hartwell Scaffolding Services Ltd",
+  "SortCode": "49-74-87",
+  "AccountNumber": "13561597",
+  "AccountName": "Hartwell Scaffolding Services Ltd",
+  "PhoneOnFile": "0161 496 0303",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1004",
+  "CompanyName": "Kestrel Plant Hire Ltd",
+  "SortCode": "73-38-67",
+  "AccountNumber": "89089901",
+  "AccountName": "Kestrel Plant Hire Ltd",
+  "PhoneOnFile": "0117 496 0404",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1005",
+  "CompanyName": "Ashby Electrical Contractors Ltd",
+  "SortCode": "40-99-64",
+  "AccountNumber": "55667651",
+  "AccountName": "Ashby Electrical Contractors Ltd",
+  "PhoneOnFile": "0121 496 0505",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1006",
+  "CompanyName": "Thornbury Rail Systems Ltd",
+  "SortCode": "63-23-21",
+  "AccountNumber": "60992979",
+  "AccountName": "Thornbury Rail Systems Ltd",
+  "PhoneOnFile": "020 7946 0606",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1007",
+  "CompanyName": "Coldwater Pipeline Services Ltd",
+  "SortCode": "53-15-68",
+  "AccountNumber": "81971316",
+  "AccountName": "Coldwater Pipeline Services Ltd",
+  "PhoneOnFile": "0141 496 0707",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1008",
+  "CompanyName": "Penrose Traffic Management Ltd",
+  "SortCode": "57-90-89",
+  "AccountNumber": "58537831",
+  "AccountName": "Penrose Traffic Management Ltd",
+  "PhoneOnFile": "0191 498 0808",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1009",
+  "CompanyName": "Severn Valley Aggregates Ltd",
+  "SortCode": "28-15-94",
+  "AccountNumber": "40587988",
+  "AccountName": "Severn Valley Aggregates Ltd",
+  "PhoneOnFile": "0117 496 0909",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1010",
+  "CompanyName": "Marlow Steel Fabrications Ltd",
+  "SortCode": "32-58-45",
+  "AccountNumber": "70855700",
+  "AccountName": "Marlow Steel Fabrications Ltd",
+  "PhoneOnFile": "0114 496 0010",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1011",
+  "CompanyName": "Greyfriars Surveying LLP",
+  "SortCode": "67-55-36",
+  "AccountNumber": "99949389",
+  "AccountName": "Greyfriars Surveying LLP",
+  "PhoneOnFile": "020 7946 0011",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1012",
+  "CompanyName": "Ironbridge Hydro Excavation Ltd",
+  "SortCode": "29-87-91",
+  "AccountNumber": "32969840",
+  "AccountName": "Ironbridge Hydro Excavation Ltd",
+  "PhoneOnFile": "0121 496 0012",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1013",
+  "CompanyName": "Wexcombe Fencing & Barriers Ltd",
+  "SortCode": "79-58-44",
+  "AccountNumber": "95899313",
+  "AccountName": "Wexcombe Fencing & Barriers Ltd",
+  "PhoneOnFile": "0117 496 0013",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1014",
+  "CompanyName": "Lindale Concrete Pumping Ltd",
+  "SortCode": "61-17-39",
+  "AccountNumber": "14308421",
+  "AccountName": "Lindale Concrete Pumping Ltd",
+  "PhoneOnFile": "0161 496 0014",
+  "Status": "Active"
+ },
+ {
+  "SupplierID": "SUP-1015",
+  "CompanyName": "Brackley Welfare Units Ltd",
+  "SortCode": "28-37-82",
+  "AccountNumber": "52235350",
+  "AccountName": "Brackley Welfare Units Ltd",
+  "PhoneOnFile": "0113 496 0015",
+  "Status": "Active"
+ }
+];
+const $ = id => document.getElementById(id);
+let current = null;
+function show(name){
+  document.querySelectorAll("[data-screen]").forEach(s => s.hidden = s.dataset.screen !== name);
+}
+function status(t){ $("statusBar").textContent = t; }
+function mask(a){ return "****" + a.slice(-4); }
+function search(){
+  const q = $("txtSupplierSearch").value.trim().toLowerCase();
+  const hits = SUPPLIERS.filter(s => !q || s.SupplierID.toLowerCase().includes(q) || s.CompanyName.toLowerCase().includes(q));
+  const body = $("tblResultsBody"); body.innerHTML = "";
+  hits.forEach(s => {
+    const tr = document.createElement("tr"); tr.id = "row-" + s.SupplierID;
+    tr.innerHTML = `<td class="ro">${s.SupplierID}</td><td>${s.CompanyName}</td><td class="ro">${s.SortCode}</td><td class="ro">${mask(s.AccountNumber)}</td><td>${s.Status}</td>
+      <td><button type="button" class="btn-amend" id="btnAmend-${s.SupplierID}" data-supplier-id="${s.SupplierID}">Amend bank details</button></td>`;
+    body.appendChild(tr);
+  });
+  $("tblResults").hidden = hits.length === 0;
+  $("msgNoResults").hidden = hits.length !== 0;
+  status(hits.length + " supplier(s) found");
+}
+function openAmend(id){
+  current = SUPPLIERS.find(s => s.SupplierID === id);
+  $("lblSupplierId").textContent = current.SupplierID;
+  $("lblCompanyName").textContent = current.CompanyName;
+  $("lblCurrentSortCode").textContent = current.SortCode;
+  $("lblCurrentAccount").textContent = mask(current.AccountNumber);
+  $("lblCurrentAccountName").textContent = current.AccountName;
+  ["txtSortCode","txtAccountNumber","txtAccountName","txtChangeRef","txtAuthorisedBy"].forEach(f => $(f).value = "");
+  $("msgError").hidden = true; $("msgProcessing").hidden = true; $("btnSave").disabled = false;
+  show("amend"); status("Amending " + current.SupplierID); $("txtSortCode").focus();
+}
+function save(){
+  const errs = [];
+  const scDigits = $("txtSortCode").value.replace(/\D/g, "");
+  const acDigits = $("txtAccountNumber").value.replace(/\D/g, "");
+  const name = $("txtAccountName").value.trim();
+  const ref = $("txtChangeRef").value.trim().toUpperCase();
+  const by = $("txtAuthorisedBy").value.trim();
+  if (scDigits.length !== 6) errs.push("Sort code must be 6 digits.");
+  if (acDigits.length !== 8) errs.push("Account number must be 8 digits.");
+  if (!name) errs.push("Enter the new account name.");
+  if (!/^BDC-\d{4,}$/.test(ref)) errs.push("Change request ref must look like BDC-0000.");
+  if (!by) errs.push("Enter who authorised the change.");
+  if (errs.length){ $("msgError").innerHTML = errs.join("<br>"); $("msgError").hidden = false; status("Record not saved"); return; }
+  $("msgError").hidden = true; $("msgProcessing").hidden = false; $("btnSave").disabled = true; status("Saving...");
+  setTimeout(() => {
+    current.SortCode = scDigits.replace(/(\d{2})(\d{2})(\d{2})/, "$1-$2-$3");
+    current.AccountNumber = acDigits; current.AccountName = name;
+    const confirmRef = "FC-" + String(Math.floor(100000 + Math.random()*900000));
+    $("lblConfirmRef").textContent = confirmRef;
+    $("lblConfirmSupplierId").textContent = current.SupplierID;
+    $("lblConfirmCompany").textContent = current.CompanyName;
+    $("lblConfirmSortCode").textContent = current.SortCode;
+    $("lblConfirmAccountNumber").textContent = current.AccountNumber;
+    $("lblConfirmAccountName").textContent = current.AccountName;
+    $("lblConfirmChangeRef").textContent = ref;
+    $("lblConfirmAuthorisedBy").textContent = by;
+    $("lblConfirmTimestamp").textContent = new Date().toISOString().replace("T"," ").slice(0,19) + " UTC";
+    show("confirm"); status("Record saved " + confirmRef);
+  }, 1200);
+}
+$("btnSearch").addEventListener("click", search);
+$("txtSupplierSearch").addEventListener("keydown", e => { if (e.key === "Enter") search(); });
+$("tblResultsBody").addEventListener("click", e => { const b = e.target.closest(".btn-amend"); if (b) openAmend(b.dataset.supplierId); });
+$("btnSave").addEventListener("click", save);
+$("btnCancel").addEventListener("click", () => { show("search"); status("Change cancelled"); });
+$("btnNewSearch").addEventListener("click", () => { show("search"); $("txtSupplierSearch").value = ""; $("tblResults").hidden = true; status("Ready"); });
+</script>
+</body>
+</html>
